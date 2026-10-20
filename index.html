@@ -8,8 +8,10 @@
 <link rel="icon" href="favicon.png" sizes="192x192" type="image/png">
 <link rel="apple-touch-icon" href="favicon.png">
 <style>
-  :root { color-scheme: light dark; --bg:#fff; --fg:#1a1a1a; --muted:#777; --card:#f3f3f3; --accent:#c0392b; --ok:#2e8b57; }
-  @media (prefers-color-scheme: dark) { :root { --bg:#161616; --fg:#eee; --muted:#999; --card:#242424; --accent:#ff6b5b; --ok:#5fcf8f; } }
+  :root { color-scheme: light; --bg:#fff; --fg:#1a1a1a; --muted:#777; --card:#f3f3f3; --accent:#c0392b; --ok:#2e8b57; }
+  :root[data-theme="dark"] { color-scheme: dark; --bg:#161616; --fg:#eee; --muted:#999; --card:#242424; --accent:#ff6b5b; --ok:#5fcf8f; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { color-scheme: dark; --bg:#161616; --fg:#eee; --muted:#999; --card:#242424; --accent:#ff6b5b; --ok:#5fcf8f; } }
+  .theme { position:fixed; top:12px; right:12px; font-size:20px; line-height:1; padding:8px 10px; border:1px solid var(--muted); border-radius:6px; background:var(--card); color:var(--fg); cursor:pointer; width:auto; }
   body { font:16px system-ui,sans-serif; background:var(--bg); color:var(--fg); max-width:380px; margin:40px auto; padding:0 16px; }
   label { display:block; margin:12px 0 4px; color:var(--muted); font-size:13px; }
   input { width:100%; box-sizing:border-box; font:inherit; font-size:20px; padding:8px; border:1px solid var(--muted); border-radius:6px; background:var(--card); color:var(--fg); }
@@ -21,6 +23,8 @@
 </style>
 </head>
 <body>
+  <button class="theme" id="theme" type="button" title="Switch light / dark" aria-label="Switch light / dark"></button>
+
   <label for="start">Started work at (24h, e.g. 8:30)</label>
   <input id="start" value="08:30" inputmode="numeric" autocomplete="off">
 
@@ -89,6 +93,20 @@ function update() {
   gap.className = "big" + (diff <= 0 ? " ok" : "");
   gap.innerHTML = `${fmt(diff)}<small>${diff > 0 ? "left to log" : "logged ahead"}</small>`;
 }
+
+// Theme: follows the system until the user picks one; the choice is remembered.
+const root = document.documentElement;
+const systemDark = matchMedia("(prefers-color-scheme: dark)");
+const isDark = () => (root.dataset.theme || (systemDark.matches ? "dark" : "light")) === "dark";
+function applyTheme() { $("theme").textContent = isDark() ? "☀️" : "🌙"; }
+const savedTheme = store.get("tg_theme", "");
+if (savedTheme) root.dataset.theme = savedTheme;
+$("theme").addEventListener("click", () => {
+  root.dataset.theme = isDark() ? "light" : "dark";
+  store.set("tg_theme", root.dataset.theme);
+  applyTheme();
+});
+applyTheme();
 
 $("start").value = store.get("tg_start", "08:30");
 $("brk").value = store.get("tg_brk", "0");
