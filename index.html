@@ -36,6 +36,8 @@
 
   <div class="result">
     <div class="row"><span>Now</span><span id="now"></span></div>
+    <div class="row"><span>Since start</span><span id="since"></span></div>
+    <div class="row"><span>Break</span><span id="brkout"></span></div>
     <div class="row"><span>Worked so far</span><span id="worked"></span></div>
     <div class="row"><span>Logged</span><span id="lg"></span></div>
     <div class="big" id="gap"></div>
@@ -88,36 +90,26 @@ function update() {
   const startMin = parseClock($("start").value);
   const nowMin = now.getHours() * 60 + now.getMinutes();
   const brk = parseBreak($("brk").value);
-  const worked = startMin === null ? 0 : Math.max(0, nowMin - startMin - (brk || 0));
   const logged = parseDuration($("logged").value);
+  const since = startMin === null ? null : nowMin - startMin;
+  const worked = since === null || brk === null ? null : Math.max(0, since - brk);
+  const show = mins => mins === null ? "?" : fmt(mins);
 
   $("now").textContent = fmt(nowMin);
-  $("worked").textContent = fmt(worked);
-  $("lg").textContent = logged === null ? "?" : fmt(logged);
+  $("since").textContent = show(since);
+  $("brkout").textContent = brk === null ? "?" : "-" + fmt(brk);
+  $("worked").textContent = show(worked);
+  $("lg").textContent = show(logged);
 
   const gap = $("gap");
-  if (logged === null) { gap.textContent = "?"; gap.className = "big"; return; }
+  if (worked === null || logged === null) { gap.textContent = "?"; gap.className = "big"; return; }
   const diff = worked - logged;
   gap.className = "big" + (diff <= 0 ? " ok" : "");
   gap.innerHTML = `${fmt(diff)}<small>${diff > 0 ? "left to log" : "logged ahead"}</small>`;
 }
 
-// Theme: follows the system until the user picks one; the choice is remembered.
-const root = document.documentElement;
-const systemDark = matchMedia("(prefers-color-scheme: dark)");
-const isDark = () => (root.dataset.theme || (systemDark.matches ? "dark" : "light")) === "dark";
-function applyTheme() { $("theme").textContent = isDark() ? "☀️" : "🌙"; }
-const savedTheme = store.get("tg_theme", "");
-if (savedTheme) root.dataset.theme = savedTheme;
-$("theme").addEventListener("click", () => {
-  root.dataset.theme = isDark() ? "light" : "dark";
-  store.set("tg_theme", root.dataset.theme);
-  applyTheme();
-});
-applyTheme();
-
-$("start").value = store.get("tg_start", "08:30");
-$("brk").value = store.get("tg_brk", "0");
+$("start").value = store.get("tg_start", "") || "08:30";
+$("brk").value = store.get("tg_brk", "") || "0";
 ["start", "logged", "brk"].forEach(id => $(id).addEventListener("input", () => {
   if (id !== "logged") store.set("tg_" + id, $(id).value);
   update();
