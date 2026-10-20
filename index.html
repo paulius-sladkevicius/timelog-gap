@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Timelog Gap</title>
+<style>
+  :root { color-scheme: light dark; --bg:#fff; --fg:#1a1a1a; --muted:#777; --card:#f3f3f3; --accent:#c0392b; --ok:#2e8b57; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#161616; --fg:#eee; --muted:#999; --card:#242424; --accent:#ff6b5b; --ok:#5fcf8f; } }
+  body { font:16px system-ui,sans-serif; background:var(--bg); color:var(--fg); max-width:380px; margin:40px auto; padding:0 16px; }
+  label { display:block; margin:12px 0 4px; color:var(--muted); font-size:13px; }
+  input { width:100%; box-sizing:border-box; font:inherit; font-size:20px; padding:8px; border:1px solid var(--muted); border-radius:6px; background:var(--card); color:var(--fg); }
+  .result { margin-top:24px; padding:16px; background:var(--card); border-radius:8px; }
+  .row { display:flex; justify-content:space-between; padding:4px 0; color:var(--muted); }
+  .big { font-size:40px; font-weight:700; text-align:center; margin-top:8px; color:var(--accent); }
+  .big.ok { color:var(--ok); }
+  .big small { display:block; font-size:13px; font-weight:400; color:var(--muted); }
+</style>
+</head>
+<body>
+  <label for="start">Started work at</label>
+  <input id="start" type="time" value="08:30">
+
+  <label for="logged">Logged (e.g. 3:30, 3.5, 3h30)</label>
+  <input id="logged" value="0:00" autofocus>
+
+  <label for="brk">Break (minutes, not worked)</label>
+  <input id="brk" type="number" min="0" step="5" value="0">
+
+  <div class="result">
+    <div class="row"><span>Now</span><span id="now"></span></div>
+    <div class="row"><span>Worked so far</span><span id="worked"></span></div>
+    <div class="row"><span>Logged</span><span id="lg"></span></div>
+    <div class="big" id="gap"></div>
+  </div>
+
+<script>
+const $ = id => document.getElementById(id);
+const store = {
+  get(k, d) { try { return localStorage.getItem(k) ?? d; } catch { return d; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch {} },
+};
+
+// "3:30", "3.5", "3,5", "3h30", "3h 30m", "90m", "45" (<=? treated as hours only if has no unit and < 24 -> hours)
+function parseDuration(text) {
+  const s = text.trim().toLowerCase().replace(",", ".");
+  if (!s) return 0;
+  let m = s.match(/^(\d+):(\d{1,2})$/);
+  if (m) return (+m[1]) * 60 + (+m[2]);
+  m = s.match(/^(?:(\d+(?:\.\d+)?)\s*h)?\s*(?:(\d+)\s*m(?:in)?)?$/);
+  if (m && (m[1] || m[2])) return Math.round((+m[1] || 0) * 60) + (+m[2] || 0);
+  m = s.match(/^\d+(?:\.\d+)?$/);
+  if (m) return Math.round(parseFloat(s) * 60);
+  return null;
+}
+
+const fmt = mins => {
+  const sign = mins < 0 ? "-" : "";
+  const a = Math.abs(Math.round(mins));
+  return `${sign}${Math.floor(a / 60)}:${String(a % 60).padStart(2, "0")}`;
+};
+
+function update() {
+  const now = new Date();
+  const [h, m] = ($("start").value || "00:00").split(":").map(Number);
+  const nowMin = now.getHours() * 60 + now.getMinutes();
+  const brk = +$("brk").value || 0;
+  const worked = Math.max(0, nowMin - (h * 60 + m) - brk);
+  const logged = parseDuration($("logged").value);
+
+  $("now").textContent = fmt(nowMin);
+  $("worked").textContent = fmt(worked);
+  $("lg").textContent = logged === null ? "?" : fmt(logged);
+
+  const gap = $("gap");
+  if (logged === null) { gap.textContent = "?"; gap.className = "big"; return; }
+  const diff = worked - logged;
+  gap.className = "big" + (diff <= 0 ? " ok" : "");
+  gap.innerHTML = `${fmt(diff)}<small>${diff > 0 ? "left to log" : "logged ahead"}</small>`;
+}
+
+$("start").value = store.get("tg_start", "08:30");
+$("brk").value = store.get("tg_brk", "0");
+["start", "logged", "brk"].forEach(id => $(id).addEventListener("input", () => {
+  if (id !== "logged") store.set("tg_" + id, $(id).value);
+  update();
+}));
+update();
+setInterval(update, 15000);
+</script>
+</body>
+</html>
