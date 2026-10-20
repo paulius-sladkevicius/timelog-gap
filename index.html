@@ -54,8 +54,10 @@ function parseDuration(text) {
   if (!s) return 0;
   let m = s.match(/^(\d+):(\d{1,2})$/);
   if (m) return (+m[1]) * 60 + (+m[2]);
-  m = s.match(/^(?:(\d+(?:\.\d+)?)\s*h)?\s*(?:(\d+)\s*m(?:in)?)?$/);
-  if (m && (m[1] || m[2])) return Math.round((+m[1] || 0) * 60) + (+m[2] || 0);
+  m = s.match(/^(\d+(?:\.\d+)?)\s*h\s*(?:(\d+)\s*(?:m(?:in)?)?)?$/);   // 3h, 3h30, 3h 30m
+  if (m) return Math.round(+m[1] * 60) + (+m[2] || 0);
+  m = s.match(/^(\d+)\s*m(?:in)?$/);                                      // 90m
+  if (m) return +m[1];
   m = s.match(/^\d+(?:\.\d+)?$/);
   if (m) return Math.round(parseFloat(s) * 60);
   return null;
