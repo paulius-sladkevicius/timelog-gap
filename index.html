@@ -11,7 +11,10 @@
   :root { color-scheme: light; --bg:#fff; --fg:#1a1a1a; --muted:#777; --card:#f3f3f3; --accent:#c0392b; --ok:#2e8b57; }
   :root[data-theme="dark"] { color-scheme: dark; --bg:#161616; --fg:#eee; --muted:#999; --card:#242424; --accent:#ff6b5b; --ok:#5fcf8f; }
   @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { color-scheme: dark; --bg:#161616; --fg:#eee; --muted:#999; --card:#242424; --accent:#ff6b5b; --ok:#5fcf8f; } }
-  .theme { position:fixed; top:12px; right:12px; display:flex; padding:8px; border:1px solid var(--muted); border-radius:6px; background:var(--card); color:var(--fg); cursor:pointer; width:auto; }
+  .actions { position:fixed; top:12px; right:12px; display:flex; gap:8px; }
+  .icon-btn { position:relative; display:flex; padding:8px; border:1px solid var(--muted); border-radius:6px; background:var(--card); color:var(--fg); cursor:pointer; }
+  .icon-btn[data-label]::after { content:attr(data-label); position:absolute; top:calc(100% + 6px); right:0; padding:4px 8px; border-radius:4px; background:var(--fg); color:var(--bg); font:13px system-ui,sans-serif; white-space:nowrap; opacity:0; pointer-events:none; transition:opacity .15s; }
+  .icon-btn[data-label]:hover::after, .icon-btn[data-label]:focus-visible::after { opacity:1; }
   body { font:16px system-ui,sans-serif; background:var(--bg); color:var(--fg); max-width:380px; margin:40px auto; padding:0 16px; }
   label { display:block; margin:12px 0 4px; color:var(--muted); font-size:13px; }
   input { width:100%; box-sizing:border-box; font:inherit; font-size:20px; padding:8px; border:1px solid var(--muted); border-radius:6px; background:var(--card); color:var(--fg); }
@@ -20,12 +23,13 @@
   .big { font-size:40px; font-weight:700; text-align:center; margin-top:8px; color:var(--accent); }
   .big.ok { color:var(--ok); }
   .big small { display:block; font-size:13px; font-weight:400; color:var(--muted); }
-  .reset { display:block; width:100%; margin-top:16px; padding:10px; font:inherit; font-size:15px; border:1px solid var(--muted); border-radius:6px; background:transparent; color:var(--fg); cursor:pointer; }
-  .reset:hover { background:var(--card); }
 </style>
 </head>
 <body>
-  <button class="theme" id="theme" type="button" title="Switch light / dark" aria-label="Switch light / dark"></button>
+  <div class="actions">
+    <button class="icon-btn" id="reset" type="button" data-label="Restart day" aria-label="Restart day: keep start time, clear logged and break"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg></button>
+    <button class="icon-btn" id="theme" type="button" title="Switch light / dark" aria-label="Switch light / dark"></button>
+  </div>
 
   <label for="start">Started work at (24h, e.g. 8:30 or 8h30)</label>
   <input id="start" value="08:30" inputmode="numeric" autocomplete="off">
@@ -44,8 +48,6 @@
     <div class="row"><span>Logged</span><span id="lg"></span></div>
     <div class="big" id="gap"></div>
   </div>
-
-  <button class="reset" id="reset" type="button" title="Keep start time, clear logged and break">Restart day</button>
 
 <script>
 const $ = id => document.getElementById(id);
