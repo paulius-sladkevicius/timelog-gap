@@ -20,6 +20,8 @@
   .big { font-size:40px; font-weight:700; text-align:center; margin-top:8px; color:var(--accent); }
   .big.ok { color:var(--ok); }
   .big small { display:block; font-size:13px; font-weight:400; color:var(--muted); }
+  .reset { display:block; width:100%; margin-top:16px; padding:10px; font:inherit; font-size:15px; border:1px solid var(--muted); border-radius:6px; background:transparent; color:var(--fg); cursor:pointer; }
+  .reset:hover { background:var(--card); }
 </style>
 </head>
 <body>
@@ -42,6 +44,8 @@
     <div class="row"><span>Logged</span><span id="lg"></span></div>
     <div class="big" id="gap"></div>
   </div>
+
+  <button class="reset" id="reset" type="button" title="Keep start time, clear logged and break">Restart day</button>
 
 <script>
 const $ = id => document.getElementById(id);
@@ -132,6 +136,15 @@ $("brk").value = store.get("tg_brk", "") || "0";
   if (id !== "logged") store.set("tg_" + id, $(id).value);
   update();
 }));
+// Restart day: keep the start time, clear everything else.
+$("reset").addEventListener("click", () => {
+  $("logged").value = "0:00";
+  $("brk").value = "0";
+  store.set("tg_brk", "0");
+  update();
+  $("logged").focus();
+  $("logged").select();
+});
 update();
 setInterval(update, 15000);
 </script>
